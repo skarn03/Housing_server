@@ -1,4 +1,5 @@
-// models/Floor.js
+const mongoose = require('mongoose');
+
 const FloorSchema = new mongoose.Schema({
     number: { type: Number, required: true },
     building: { type: mongoose.Schema.Types.ObjectId, ref: 'Building' },
