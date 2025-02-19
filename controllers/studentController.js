@@ -2,6 +2,11 @@ const Student = require("../models/Student");
 const University = require("../models/University");
 const Building = require("../models/Building");
 const Floor = require("../models/Floor");
+const Package = require("../models/Package");
+const incidentReports = require("../models/IncidentReport");
+const studentConnectionNotes = require("../models/StudentConnectionNote");
+
+
 
 const addStudent = async (req, res) => {
     try {
@@ -165,6 +170,56 @@ const getStudents = async (req, res) => {
     }
 };
 
+const getStudentById = async (req, res) => {
+    try {
+        console.log("📡 Fetching student details...");
+
+        const { studentID } = req.params; // studentID is actually the studentNumber now
+        const university = req.userUniversity; // Retrieved from checkRole middleware
+
+        if (!university) {
+            console.log("❌ University not found in request!");
+            return res.status(400).json({ error: "University not found" });
+        }
+
+        console.log(`🔎 Searching for student with studentNumber: ${studentID}`);
+
+        // First, find the student by studentNumber
+        const student = await Student.findOne({ studentNumber: studentID })
+            .populate({ path: "packages", model: "Package", options: { strictPopulate: false } })
+            .populate({ path: "incidentReports", model: "IncidentReport", options: { strictPopulate: false } })
+            .populate({ path: "studentConnectionNotes", model: "StudentConnectionNote", options: { strictPopulate: false } });
+
+        if (!student) {
+            console.log(`❌ Student with studentNumber: ${studentID} not found.`);
+            return res.status(404).json({ error: "Student not found" });
+        }
+
+        // Check if the student belongs to the university
+        const isStudentInUniversity = university.students.includes(student._id);
+
+        if (!isStudentInUniversity) {
+            console.log(`❌ Student does not belong to university: ${university.name}`);
+            return res.status(403).json({ error: "Access denied: Student does not belong to this university" });
+        }
+
+        console.log("✅ Student found and belongs to the university:", student.firstName, student.lastName);
+
+        // Ensure missing references are handled properly
+        const safeStudent = {
+            ...student.toObject(),
+            packages: student.packages || [],
+            incidentReports: student.incidentReports || [],
+            studentConnectionNotes: student.studentConnectionNotes || []
+        };
+
+        res.status(200).json(safeStudent);
+    } catch (error) {
+        console.error("❌ Error fetching student:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+};
 
 
-module.exports = { addStudent,getStudents };
+
+module.exports = { addStudent,getStudents,getStudentById };
