@@ -1,7 +1,7 @@
 const mongoose = require('mongoose');
 
 const PackageSchema = new mongoose.Schema({
-    trackingNumber: { type: String, required: true, unique: true },
+    trackingNumber: { type: String, unique: true },
     recipient: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
     parcelType: { type: String, required: true },
     shippingType: { type: String, required: true },
@@ -13,6 +13,7 @@ const PackageSchema = new mongoose.Schema({
     storageLocation: { type: String },
     receivedLocation: { type: String },
     building : {type:String},
+    staff: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff', required: true },
     createdAt: { type: Date, default: Date.now }
 });
 module.exports = mongoose.model('Package', PackageSchema);
