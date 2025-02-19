@@ -5,7 +5,9 @@ const StaffSchema = new mongoose.Schema({
     email: { type: String, required: true, unique: true },
     password: { type: String, required: true },
     role: { type: String, enum: ['SuperAdmin', 'CD', 'GHD', 'RA'], default: 'RA', required: true },
-    floor: { type: mongoose.Schema.Types.ObjectId, ref: 'Floor', required: false }
+    floor: { type: mongoose.Schema.Types.ObjectId, ref: 'Floor', required: false },
+    university: { type: mongoose.Schema.Types.ObjectId, ref: 'University', required: true }, // Ensure this exists
+    incidentReports:{type:mongoose.Schema.Types.ObjectId,ref:'incidentReport'}
 });
 
 module.exports = mongoose.model('Staff', StaffSchema);

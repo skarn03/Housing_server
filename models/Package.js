@@ -12,6 +12,7 @@ const PackageSchema = new mongoose.Schema({
     comments: { type: String },
     storageLocation: { type: String },
     receivedLocation: { type: String },
+    building : {type:String},
     createdAt: { type: Date, default: Date.now }
 });
 module.exports = mongoose.model('Package', PackageSchema);

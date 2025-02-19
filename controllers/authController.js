@@ -1,66 +1,73 @@
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-const mongoose = require('mongoose');
 require('dotenv').config();
+const mongoose = require('mongoose');
 
-const HousingAccess = mongoose.model('HousingAccess', new mongoose.Schema({}, { strict: false }), 'housingaccesses');
-const Staff = mongoose.model('Staff', new mongoose.Schema({}, { strict: false }), 'staff');
+const Staff = require('../models/Staff'); // Import Staff model
+const University = require('../models/University'); // Import University model
 
+// 🟢 LOGIN FUNCTION
 exports.login = async (req, res) => {
     try {
+        console.log("🔹 Received Login Request");
+        
         const { email, password } = req.body;
-        console.log("Request Body:", req.body);
+        console.log("📩 Request Body:", req.body);
 
-        // First, check Staff collection
-        let user = await Staff.findOne({ email: email });
-        let role;
+        // Find the user first
+        console.log("🔍 Searching for user in Staff collection...");
+        console.log("📧 email is", email);
+        const user = await Staff.findOne({ email: email.toLowerCase().trim() });
 
         if (!user) {
-            // If not found in Staff, check HousingAccess for SuperAdmin login
-            let housingAccess = await HousingAccess.findOne({ "superAdmin.email": email });
-            if (!housingAccess) {
-                return res.status(400).json({ message: 'Invalid email or password' });
-            }
-
-            // Compare password before creating a Staff user
-            const isMatch = await bcrypt.compare(password, housingAccess.superAdmin.password);
-            if (!isMatch) {
-                return res.status(400).json({ message: 'Invalid email or password' });
-            }
-
-            role = "SuperAdmin";
-
-            // Create a corresponding Staff user
-            user = new Staff({
-                name: housingAccess.superAdmin.name,
-                email: housingAccess.superAdmin.email,
-                password: housingAccess.superAdmin.password, // Use existing password
-                role: role
-            });
-            await user.save();
-            console.log("✅ SuperAdmin added to Staff collection!");
-        } else {
-            role = user.role;
-        }
-
-        console.log("Found User:", user);
-
-        // Compare password
-        const isMatch = await bcrypt.compare(password, user.password);
-        if (!isMatch) {
+            console.log("❌ User not found");
             return res.status(400).json({ message: 'Invalid email or password' });
         }
 
+        console.log("✅ Found User:", user);
+
+        // Compare password
+        console.log("🔑 Comparing password...");
+        const isMatch = await bcrypt.compare(password, user.password);
+
+        if (!isMatch) {
+            console.log("❌ Password mismatch");
+            return res.status(400).json({ message: 'Invalid email or password' });
+        }
+
+        console.log("✅ Password matched");
+
+        // Fetch university name separately
+        console.log("🏫 Fetching university information...");
+        const university = await University.findById(user.university).select('name');
+        
+        if (university) {
+            console.log("✅ University Found:", university.name);
+        } else {
+            console.log("❓ No university found for this user");
+        }
+
         // Generate JWT Token
+        console.log("🔐 Generating JWT Token...");
         const token = jwt.sign(
-            { id: user._id, email: email, role: role },
+            { id: user._id, email: user.email, role: user.role },
             process.env.JWT_SECRET,
             { expiresIn: '24h' }
         );
 
-        res.json({ token, role, message: 'Login successful' });
+        console.log("✅ Token Generated:", token);
+
+        console.log("🚀 Sending Success Response...");
+        res.json({ 
+            id: user._id, 
+            token, 
+            role: user.role, 
+            university: university ? university.name : null, 
+            message: 'Login successful' 
+        });
+
     } catch (error) {
-        console.error("Error:", error);
+        console.error("❌ Server Error:", error);
         res.status(500).json({ message: 'Server error', error });
     }
 };
