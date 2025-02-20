@@ -6,6 +6,8 @@ const universityRoutes = require('./routes/universityRoutes');
 const floorRoutes = require('./routes/floorRoutes');
 const studentRoutes = require('./routes/studentRoutes');
 const buildingRoutes= require('./routes/buildingRoutes');
+const packageRoutes= require('./routes/packageRoutes');
+
 require('dotenv').config();
 
 const app = express();
