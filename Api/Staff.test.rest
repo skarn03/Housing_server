@@ -1,0 +1,50 @@
+
+@token=Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjY3YmIyNmIwOGZjYjQ3YzkzOWExMWQxZCIsImVtYWlsIjoic2FtZWVyLmthcm5AdWVmLmZpIiwicm9sZSI6IlN1cGVyQWRtaW4iLCJpYXQiOjE3NDAzMjAwNjAsImV4cCI6MTc0MDQwNjQ2MH0.XIB6ZXuWZSv-WFVPp2qUcKfSF-3UPM_58YgXbKpptyg
+
+@url=http://localhost:8000
+
+### Create a new Staff Member
+POST {{url}}/api/staff/createStaff
+Content-Type: application/json
+Authorization: {{token}}
+
+{
+  "name": "Testing staff",
+  "firstName": "Sameer1",
+  "middleName": "",
+  "lastName": "Karn1",
+  "email": "sameer1.karn1@uef.com",
+  "password": "password",
+  "role": "SuperAdmin",
+  "university": "67bae65222bf28ddd32586ee"
+}
+
+### Login
+POST {{url}}/api/auth/login
+Content-Type: application/json
+
+{
+  "email": "sameer.karn@uef.fi",
+  "password": "rootroot"
+}
+
+
+### Get Staff by ID
+GET {{url}}/api/staff/67bb26b08fcb47c939a11d1d
+Content-Type: application/json
+
+### Get All Staff
+GET {{url}}/api/staff
+Content-Type: application/json
+
+### Update Staff
+PUT {{url}}/api/staff/67bb26b08fcb47c939a11d1d
+Content-Type: application/json
+
+{
+  "password": "rootroot"
+}
+
+### Delete Staff
+DELETE {{url}}/api/staff/67bb2ba2cffdd4b98b3d93fc
+Content-Type: application/json
