@@ -122,8 +122,8 @@ const getStudents = async (req, res) => {
 
         // Extract filters from query parameters
         const { search = "", page = 1, limit = 10 } = req.query;
-        const university = req.userUniversity; // Retrieve university from req (set by checkRole middleware)
-
+        const university = req.userUniversity; // Retrieved from checkRole middleware
+        
         if (!university) {
             console.log("❌ University not found in request!");
             return res.status(400).json({ error: "University not found" });
@@ -131,8 +131,9 @@ const getStudents = async (req, res) => {
 
         console.log(`🔍 Search: ${search} | 📄 Page: ${page} | 🔢 Limit: ${limit} | 🏛️ University: ${university.name}`);
 
-        // Split search terms by commas and trim spaces
+        // Split search terms by commas, trim spaces, and remove empty values
         const searchTerms = search.split(',').map(term => term.trim()).filter(term => term);
+
         let query = { _id: { $in: university.students } };
 
         if (searchTerms.length > 0) {
@@ -142,12 +143,13 @@ const getStudents = async (req, res) => {
                     { lastName: new RegExp(term, "i") },
                     { studentNumber: new RegExp(term, "i") },
                     { email: new RegExp(term, "i") },
-                    { building: new RegExp(term, "i") }
+                    { building: new RegExp(term, "i") },
+                    { room: new RegExp(term, "i") }
                 ]
             }));
         }
 
-        console.log("🔎 Query:", query);
+        console.log("🔎 Query:", JSON.stringify(query, null, 2));
 
         // Pagination calculation
         const students = await Student.find(query)
@@ -169,6 +171,10 @@ const getStudents = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+
+
+
 
 const getStudentById = async (req, res) => {
     try {

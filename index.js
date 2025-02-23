@@ -4,10 +4,11 @@ const connectDB = require('./config/db');
 const authRoutes = require('./routes/authRoutes');
 const universityRoutes = require('./routes/universityRoutes');
 const floorRoutes = require('./routes/floorRoutes');
-const studentRoutes = require('./routes/studentRoutes');
-const buildingRoutes= require('./routes/buildingRoutes');
-const packageRoutes= require('./routes/packageRoutes');
-
+const buildingRoutes = require('./routes/buildingRoutes');
+const packageRoutes = require('./routes/packageRoutes');
+const packageLogRoutes = require('./routes/packageLogRoutes');
+const incidentReportRoutes = require('./routes/incidentReportRoutes');
+const studentRoutes = require('./routes/studentRoutes')
 require('dotenv').config();
 
 const app = express();
@@ -22,9 +23,13 @@ connectDB();
 // Define Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/universities', universityRoutes);
-app.use('/api/floor',floorRoutes );
-app.use('/api/student',studentRoutes );
-app.use('/api/building',buildingRoutes );
+app.use('/api/floor', floorRoutes);
+app.use('/api/student', studentRoutes);
+app.use('/api/building', buildingRoutes);
+app.use('/api/package', packageRoutes);
+app.use('/api/packagelog', packageLogRoutes);
+app.use('/api/incidentreport', incidentReportRoutes);
+
 
 
 const PORT = process.env.PORT || 5000;
