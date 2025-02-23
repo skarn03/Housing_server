@@ -1,0 +1,45 @@
+@url=http://localhost:8000
+@token = Bearer TOKEN
+### Create a New University
+
+POST {{url}}/api/universities/create
+Content-Type: application/json
+
+{
+  "name": "Test University",
+  "domain": "testuniversity.edu",
+  "logo": "http://example.com/logo.png",
+  "buildings": [],
+  "staff": [],
+  "students": [],
+  "studentConnectionNoteOptions": ["Housing", "Academics", "Follow-Up", "General"],
+  "incidentReports": [],
+  "packages": []
+}
+
+###
+
+### Update University (Replace <id> with actual University ID)
+PUT {{url}}/api/universities/<id>
+Content-Type: application/json
+
+{
+  "domain": "updateduniversity.edu",
+  "logo": "http://example.com/updatedlogo.png"
+}
+
+###
+
+### Delete University (Replace <id> with actual University ID)
+DELETE {{url}}/api/universities/67bb2fae97022ae6cd053957
+Content-Type: application/json
+
+###
+
+### Search Universities by Name
+GET {{url}}/api/universities/search/Test
+
+###
+
+### Get University by Exact Name
+GET {{url}}/api/universities/university/Test University
