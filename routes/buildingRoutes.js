@@ -4,7 +4,7 @@ const { getBuildings, addBuilding, updateBuilding, deleteBuilding } = require(".
 const checkAuth = require("../middleware/checkAuth");
 const checkRole = require("../middleware/checkRole");
 
-//  router.use(checkAuth);
+ router.use(checkAuth);
 
 // ✅ GET all buildings for university
 router.get("/getBuildings", checkRole("SuperAdmin"), getBuildings);

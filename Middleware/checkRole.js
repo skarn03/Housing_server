@@ -3,7 +3,7 @@ const Staff = require("../models/Staff");
 const checkRole = (requiredRole) => {
     return async (req, res, next) => {
         console.log("🔹 [Middleware] Checking user role...");
-
+        console.log(req.userData);
         const userID = req.userData.userID;
         console.log(`🆔 Extracted user ID: ${userID}`);
 

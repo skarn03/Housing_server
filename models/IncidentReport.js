@@ -68,15 +68,18 @@ const IncidentReportSchema = new mongoose.Schema({
     },
     specificLocation: { type: String },
     involvedParties: [{
-        studentName: { type: String, required: true },
-        role: { type: String, required: true },
-        idNumber: { type: String }
+        student: { type: mongoose.Schema.Types.ObjectId, ref: 'Student', required: true },
+        role: { 
+            type: String, 
+            enum: ['Respondant', 'complainant', 'Witness', 'student of concern'], 
+            required: true 
+        }
     }],
     description: { type: String, required: true },
     campusPoliceResponse: { type: String, enum: ['Yes', 'No', "I don't know"], required: true },
     reportNumber: { type: String },
     supportingDocuments: [{ type: String }],
-    createdBy: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }], // Associated Staff
+    createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }, // Associated Staff
     createdAt: { type: Date, default: Date.now }
 });
 
