@@ -77,7 +77,7 @@ const IncidentReportSchema = new mongoose.Schema({
     }],
     description: { type: String, required: true },
     campusPoliceResponse: { type: String, enum: ['Yes', 'No', "I don't know"], required: true },
-    reportNumber: { type: String },
+    incidentReportNumber: { type: String, unique: true }, // New unique field
     supportingDocuments: [{ type: String }],
     createdBy: { type: mongoose.Schema.Types.ObjectId, ref: 'Staff' }, // Associated Staff
     createdAt: { type: Date, default: Date.now }

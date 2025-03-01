@@ -111,7 +111,7 @@ const getPackages = async (req, res) => {
     try {
         console.log("📦 Fetching all packages...");
 
-        const { search = "", buildings = "", page = 1, limit = 10 } = req.query;
+        const { search = "", buildings = "", studentId = "", page = 1, limit = 10 } = req.query;
         let query = {};
 
         // ✅ Filter by selected buildings
@@ -119,6 +119,12 @@ const getPackages = async (req, res) => {
             const buildingIds = buildings.split(",").map(id => id.trim());
             query.building = { $in: buildingIds };
             console.log("🏢 Filtering by Buildings:", buildingIds);
+        }
+
+        // ✅ Filter by selected student ID (if provided)
+        if (studentId) {
+            query.recipient = studentId;
+            console.log("🎓 Filtering by Student ID:", studentId);
         }
 
         // ✅ Prepare search terms
@@ -144,12 +150,22 @@ const getPackages = async (req, res) => {
                 ...searchTerms.map(term => ({ studentNumber: { $regex: term, $options: "i" } })),
                 ...searchTerms.map(term => ({ email: { $regex: term, $options: "i" } })),
                 ...searchTerms.map(term => ({ building: { $regex: term, $options: "i" } })),
-                ...searchTerms.map(term => ({ room: { $regex: term, $options: "i" } }))
+                ...searchTerms.map(term => ({ room: { $regex: term, $options: "i" } })),
+                // New: also search by concatenated full name
+                {
+                    $expr: {
+                        $regexMatch: {
+                            input: { $concat: ["$firstName", " ", "$lastName"] },
+                            regex: searchTerms.join("|"),
+                            options: "i"
+                        }
+                    }
+                }
             ];
         }
 
-        console.log("🔎 Package Query:", JSON.stringify(packageQuery, null, 2));
-        console.log("🎓 Student Query:", JSON.stringify(studentQuery, null, 2));
+        // console.log("🔎 Package Query:", JSON.stringify(packageQuery, null, 2));
+        // console.log("🎓 Student Query:", JSON.stringify(studentQuery, null, 2));
 
         // ✅ Step 1: Find all students matching `studentQuery`
         let matchingStudents = [];
@@ -160,6 +176,7 @@ const getPackages = async (req, res) => {
 
         // ✅ Step 2: Combine Package + Student Search
         let combinedQuery = { ...query };
+
         if (packageQuery.$or) {
             combinedQuery.$or = packageQuery.$or;
         }
@@ -168,7 +185,7 @@ const getPackages = async (req, res) => {
             combinedQuery.$or = [...(combinedQuery.$or || []), { recipient: { $in: matchingStudents.map(s => s._id) } }];
         }
 
-        console.log("📝 Final Query for Packages:", JSON.stringify(combinedQuery, null, 2));
+        // console.log("📝 Final Query for Packages:", JSON.stringify(combinedQuery, null, 2));
 
         // ✅ Fetch Packages with Pagination & Populate Student Details
         let packages = await Package.find(combinedQuery)
@@ -198,6 +215,8 @@ const getPackages = async (req, res) => {
         res.status(500).json({ error: "Internal server error" });
     }
 };
+
+
 
 
 

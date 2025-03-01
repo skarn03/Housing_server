@@ -9,6 +9,8 @@ const packageRoutes = require('./routes/packageRoutes');
 const packageLogRoutes = require('./routes/packageLogRoutes');
 const incidentReportRoutes = require('./routes/incidentReportRoutes');
 const studentRoutes = require('./routes/studentRoutes')
+const staffRoutes = require('./routes/staffRoutes')
+
 require('dotenv').config();
 
 const app = express();
@@ -29,6 +31,7 @@ app.use('/api/building', buildingRoutes);
 app.use('/api/package', packageRoutes);
 app.use('/api/packagelog', packageLogRoutes);
 app.use('/api/incidentreport', incidentReportRoutes);
+app.use('/api/staff', staffRoutes);
 
 
 

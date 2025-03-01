@@ -17,6 +17,12 @@ const checkRole = (requiredRole) => {
             }
             console.log(`✅ Staff found: ${staff.name} (Role: ${staff.role})`);
 
+            // ✅ Check if the staff member is revoked
+            if (staff.revoke === true) {
+                console.log("❌ Access denied: Staff member is revoked!");
+                return res.status(403).json({ message: "Access denied: Your account has been revoked." });
+            }
+
             // Define role hierarchy
             const roleHierarchy = {
                 "SuperAdmin": 4,
