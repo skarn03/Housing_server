@@ -118,59 +118,86 @@ const addStudent = async (req, res) => {
 
 const getStudents = async (req, res) => {
     try {
-        console.log("📡 Fetching students from university.students...");
+        console.log("📡 Fetching students...");
 
-        // Extract filters from query parameters
-        const { search = "", page = 1, limit = 10 } = req.query;
-        const university = req.userUniversity; // Retrieved from checkRole middleware
-        
+        // Basic query params
+        let { search = "", page = 1, limit = 10, building, floor } = req.query;
+
+        // If your checkAuth/checkRole sets req.userUniversity:
+        const university = req.userUniversity;
         if (!university) {
             console.log("❌ University not found in request!");
             return res.status(400).json({ error: "University not found" });
         }
 
-        console.log(`🔍 Search: ${search} | 📄 Page: ${page} | 🔢 Limit: ${limit} | 🏛️ University: ${university.name}`);
+        console.log(
+            `🔍 Search: ${search} | Page: ${page} | Limit: ${limit} | 🏛️ University: ${university.name}`
+        );
 
-        // Split search terms by commas, trim spaces, and remove empty values
-        const searchTerms = search.split(',').map(term => term.trim()).filter(term => term);
+        // Log building/floor
+        console.log(`🔍 building: ${building} | floor: ${floor}`);
 
+        // Base query: only students in this university
         let query = { _id: { $in: university.students } };
 
+        // 1) Append building/floor to the search string if present
+        // That means building/floor will be matched by your $or logic
+        if (building) search += `,${building}`;
+        if (floor) search += `,${floor}`;
+
+        // 2) Handle the 'search' input
+        //    split by commas, trim, remove empty
+        const searchTerms = search
+            .split(",")
+            .map((t) => t.trim())
+            .filter(Boolean);
+
+        // 3) If we have search terms, build an $and array of $or clauses
         if (searchTerms.length > 0) {
-            query.$and = searchTerms.map(term => ({
+            query.$and = searchTerms.map((term) => ({
                 $or: [
                     { firstName: new RegExp(term, "i") },
                     { lastName: new RegExp(term, "i") },
+                    { preferredName: new RegExp(term, "i") },
                     { studentNumber: new RegExp(term, "i") },
                     { email: new RegExp(term, "i") },
                     { building: new RegExp(term, "i") },
-                    { room: new RegExp(term, "i") }
-                ]
+                    { floor: new RegExp(term, "i") },
+                    { room: new RegExp(term, "i") },
+                ],
             }));
         }
 
-        console.log("🔎 Query:", JSON.stringify(query, null, 2));
+        console.log("🔎 Final Query:", JSON.stringify(query, null, 2));
 
-        // Pagination calculation
+        // 4) Pagination
+        const skipVal = (page - 1) * limit;
+
+        // 5) Fetch data
         const students = await Student.find(query)
-            .skip((page - 1) * limit)
+            .skip(skipVal)
             .limit(Number(limit));
 
         const totalStudents = await Student.countDocuments(query);
         const totalPages = Math.ceil(totalStudents / limit);
 
-        console.log(`✅ Found ${students.length} students (Total: ${totalStudents}, Pages: ${totalPages})`);
+        console.log(
+            `✅ Found ${students.length} students (Total: ${totalStudents}, Pages: ${totalPages})`
+        );
 
-        res.status(200).json({
+        return res.status(200).json({
             students,
             totalPages,
             currentPage: Number(page),
         });
     } catch (error) {
         console.error("❌ Error fetching students:", error);
-        res.status(500).json({ error: "Internal server error" });
+        return res
+            .status(500)
+            .json({ error: "Internal server error" });
     }
 };
+
 
 
 
@@ -228,4 +255,4 @@ const getStudentById = async (req, res) => {
 
 
 
-module.exports = { addStudent,getStudents,getStudentById };
+module.exports = { addStudent, getStudents, getStudentById };

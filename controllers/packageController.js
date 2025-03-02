@@ -1,18 +1,26 @@
+const crypto = require("crypto");
+const bcrypt = require("bcrypt");
 const Package = require("../models/Package");
 const Student = require("../models/Student");
 const Building = require("../models/Building");
-
+const { sendEmailMailgun } = require("../config/sendMail");
 // ✅ Add a new package
 const addPackage = async (req, res) => {
     try {
         console.log("📦 Starting package addition process...");
 
         const {
-            trackingNumber, recipient, parcelType, shippingType,
-            receiptDate, receiptTime, comments, building // Now building is an ID, not name
+            trackingNumber,
+            recipient,
+            parcelType,
+            shippingType,
+            receiptDate,
+            receiptTime,
+            comments,
+            building,
         } = req.body;
 
-        // ✅ Get Logged-in Staff ID from Request
+        // ✅ Logged-in Staff ID
         const staff = req.userData.userID;
         if (!staff) {
             console.log("⛔ Unauthorized: Staff not identified.");
@@ -22,16 +30,30 @@ const addPackage = async (req, res) => {
 
         // ✅ Validate required fields
         if (!recipient || !parcelType || !shippingType || !building) {
-            console.log("⚠️ Missing required fields:", { recipient, parcelType, shippingType, building });
+            console.log("⚠️ Missing required fields:", {
+                recipient,
+                parcelType,
+                shippingType,
+                building,
+            });
             return res.status(400).json({ error: "Missing required fields." });
         }
         console.log("✅ All required fields are provided.");
 
         // ✅ Validate `parcelType`
         const validParcelTypes = [
-            "Box/Bag - Large and Up", "Box/Bag - Medium", "Box/Bag - Small", "Care Package",
-            "Conduct Letter", "Envelope-Financial Doc/Cards", "Envelope-IRS Document", "Envelope-Large",
-            "Other-add type to comments", "Perishable-Flowers", "Perishable-Food", "Perishable-Other"
+            "Box/Bag - Large and Up",
+            "Box/Bag - Medium",
+            "Box/Bag - Small",
+            "Care Package",
+            "Conduct Letter",
+            "Envelope-Financial Doc/Cards",
+            "Envelope-IRS Document",
+            "Envelope-Large",
+            "Other-add type to comments",
+            "Perishable-Flowers",
+            "Perishable-Food",
+            "Perishable-Other",
         ];
         if (!validParcelTypes.includes(parcelType)) {
             console.log(`❌ Invalid parcel type: ${parcelType}`);
@@ -47,18 +69,20 @@ const addPackage = async (req, res) => {
         }
         console.log(`🚚 Shipping Type Validated: ${shippingType}`);
 
-        // ✅ Ensure `recipient` (Student) Exists
+        // ✅ Find recipient student
         console.log(`🔍 Searching for recipient student (ID: ${recipient})...`);
         const student = await Student.findById(recipient);
         if (!student) {
             console.log("❌ Recipient student not found.");
             return res.status(404).json({ error: "Recipient student not found." });
         }
-        console.log(`🎓 Recipient Student Found: ${student.firstName} ${student.lastName} (ID: ${student._id})`);
+        console.log(
+            `🎓 Recipient Student Found: ${student.firstName} ${student.lastName} (ID: ${student._id})`
+        );
 
-        // ✅ Ensure `building` Exists (Find by **ID** instead of Name)
+        // ✅ Find building by ID
         console.log(`🏢 Searching for building (ID: ${building})...`);
-        const buildingExists = await Building.findById(building); // Now using building ID directly
+        const buildingExists = await Building.findById(building);
         if (!buildingExists) {
             console.log("❌ Building not found.");
             return res.status(404).json({ error: "Building not found." });
@@ -74,36 +98,86 @@ const addPackage = async (req, res) => {
             shippingType,
             receiptDate: receiptDate || new Date(),
             receiptTime: receiptTime || new Date().toLocaleTimeString(),
-            status: "Logged In", // 👈 Always set to "Logged In"
+            status: "Logged In", // Always set to "Logged In"
             comments,
-            building, // Directly using the passed building ID
-            staff // 👈 Automatically set to logged-in user
+            building,
+            staff,
         });
 
         await newPackage.save();
         console.log(`✅ Package Created Successfully: ${newPackage._id}`);
 
-        // ✅ Add Package to Student's Packages Array
-        console.log(`📦 Adding package to student's package list (Student ID: ${student._id})...`);
+        // ✅ Add Package to Student's array
+        console.log(
+            `📦 Adding package to student's package list (Student ID: ${student._id})...`
+        );
         student.packages.push(newPackage._id);
         await student.save();
         console.log("🎓 Student's package list updated successfully.");
 
-        // ✅ Add Package to Building's Packages Array
-        console.log(`🏢 Adding package to building's package list (Building ID: ${buildingExists._id})...`);
+        // ✅ Add Package to Building's array
+        console.log(
+            `🏢 Adding package to building's package list (Building ID: ${buildingExists._id})...`
+        );
         buildingExists.packages.push(newPackage._id);
         await buildingExists.save();
         console.log("🏗️ Building's package list updated successfully.");
 
-        console.log(`✅ Package added successfully by staff: ${staff} (Status: Logged In).`);
-        res.status(201).json({ message: "Package added successfully", package: newPackage });
+        // ✅ Send Email Notification to Student
+        try {
+            const mailgunFrom = process.env.MAILGUN_FROM_EMAIL || "noreply@example.com";
+            const subject = "New Package Received";
+            const studentEmail = student.email; // Ensure Student has email
 
+            const textBody = `
+Hello ${student.firstName},
+
+We've received a new package for you at ${buildingExists.name}.
+
+Tracking Number: ${trackingNumber || "N/A"}
+Parcel Type: ${parcelType}
+Shipping Type: ${shippingType}
+Comments: ${comments || "None"}
+
+You can pick it up during normal business hours. 
+Status: Logged In
+
+Thank you,
+Residence Life Package Management
+`;
+
+            const htmlBody = `
+<h3>Hello ${student.firstName},</h3>
+<p>We've received a new package for you at <strong>${buildingExists.name}</strong>.</p>
+<ul>
+  <li><strong>Tracking Number:</strong> ${trackingNumber || "N/A"}</li>
+  <li><strong>Parcel Type:</strong> ${parcelType}</li>
+  <li><strong>Shipping Type:</strong> ${shippingType}</li>
+  <li><strong>Comments:</strong> ${comments || "None"}</li>
+</ul>
+<p>You can pick it up during normal business hours.</p>
+<p>Status: <strong>Logged In</strong></p>
+
+<p>Thank you,<br />Residence Life Package Management</p>
+`;
+
+            console.log(`📧 Sending package notification to ${studentEmail}...`);
+            await sendEmailMailgun(mailgunFrom, subject, studentEmail, textBody, htmlBody);
+            console.log(`✅ Email sent to ${studentEmail}`);
+        } catch (emailErr) {
+            console.error("❌ Error sending package email:", emailErr.message);
+            // We won't fail the entire request if email fails
+        }
+
+        console.log(
+            `✅ Package added successfully by staff: ${staff} (Status: Logged In).`
+        );
+        res.status(201).json({ message: "Package added successfully", package: newPackage });
     } catch (error) {
         console.error("❌ Error adding package:", error);
         res.status(500).json({ error: "Internal server error" });
     }
 };
-
 
 
 // ✅ Fetch all packages
@@ -296,4 +370,4 @@ const logOutPackages = async (req, res) => {
 
 
 
-module.exports = { addPackage, getPackages, getPackageById, deletePackage,logOutPackages };
+module.exports = { addPackage, getPackages, getPackageById, deletePackage, logOutPackages };

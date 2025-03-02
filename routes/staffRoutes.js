@@ -1,10 +1,14 @@
+// routes/staffRoutes.js
 const express = require("express");
-const { getAllStaff } = require("../controllers/staffController");
-const checkAuth = require("../middleware/checkAuth"); // Authentication Middleware
-const checkRole = require("../middleware/checkRole"); // Role-Based Middleware
+const { getAllStaff, addStaff } = require("../controllers/staffController");
+const checkAuth = require("../middleware/checkAuth"); // Authentication
+const checkRole = require("../middleware/checkRole"); // Role-based
 const router = express.Router();
 
-// ✅ Route to get all staff members of a specific university
+// ✅ GET all staff for a specific university
 router.get("/university", checkAuth, checkRole("CD"), getAllStaff);
+
+// ✅ POST to add a new staff member
+router.post("/add", checkAuth, checkRole("CD"), addStaff);
 
 module.exports = router;
